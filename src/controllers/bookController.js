@@ -7,9 +7,25 @@ exports.getAll = (req, res) => {
 
     BookModel.getAll(page, size, (err, books) => {
         if (err) {
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({
+                meta: {
+                    timestamp: new Date().toISOString(),  // Include the timestamp,
+                    status: "error"
+                }, error: {
+                    code: err.code,
+                    message: err.message,
+                }
+            });
         }
-        res.json({ page: page, size: size, books });
+        res.json({
+            meta: {
+                page: page,
+                size: size,
+                timestamp: new Date().toISOString(),
+                status: "success"
+            },
+            data: books
+        });
     });
 };
 
@@ -18,12 +34,36 @@ exports.getById = (req, res) => {
     const { id } = req.params;
     BookModel.getById(id, (err, book) => {
         if (err) {
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({
+                meta: {
+                    timestamp: new Date().toISOString(),
+                    status: "error"
+                },
+                error: {
+                    code: err.code,
+                    message: err.message,
+                }
+            });
         }
         if (!book) {
-            return res.status(404).json({ message: 'Book not found' });
+            return res.status(404).json({
+                meta: {
+                    timestamp: new Date().toISOString(),
+                    status: "error"
+                },
+                error: {
+                    code: "BOOK_NOT_FOUND",  // Custom error code for book not found
+                    message: "The requested book was not found in the database.",  // More specific message
+                }
+            });
         }
-        res.json({ book });
+        res.json({
+            meta: {
+                timestamp: new Date().toISOString(),
+                status: "success"
+            },
+            data: book
+        });
     });
 };
 
@@ -34,11 +74,40 @@ exports.add = (req, res) => {
         if (err) {
             // Check for unique constraint violation error
             if (err.message.includes("UNIQUE constraint failed")) {
-                return res.status(409).json({ error: "This book already exists in the database. To update the existing entry, please use the PUT method with the book ID." });
+                return res.status(409).json({
+                    meta: {
+                        timestamp: new Date().toISOString(),
+                        status: "error"
+                    }, error: {
+                        code: "BOOK_ALREADY_EXISTS",
+                        message: "This book already exists in the database.",
+                        suggestion: "To update the existing entry, please use the PUT method with the book ID."
+                    }
+                })
             }
-            return res.status(500).json({ error: err.message });
+            if (err.message.includes("NOT NULL constraint failed")) {
+                return res.status(400).json({
+                    meta: {
+                        timestamp: new Date().toISOString(),
+                        status: "error"
+                    },
+                    error: { code: "REQUIRED_FIELD_MISSING", message: "A required field is missing.", }
+                });
+            }
+            return res.status(500).json({
+                meta: {
+                    timestamp: new Date().toISOString(),
+                    status: "error"
+                }, error: { code: err.code, message: err.message, }
+            });
         }
-        res.status(201).json({ bookId: result.id });
+        res.status(201).json({
+            meta: {
+                timestamp: new Date().toISOString(),
+                status: "success"
+            },
+            data: result
+        });
     });
 };
 
@@ -46,14 +115,45 @@ exports.add = (req, res) => {
 exports.update = (req, res) => {
     const { id } = req.params;
     const bookData = req.body;
-    BookModel.update(id, bookData, (err, result) => {
+    BookModel.update(id, bookData, (err, result , changes) => {
         if (err) {
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({
+                meta: {
+                    timestamp: new Date().toISOString(),
+                    status: "error"
+                }, error: {
+                    code: err.code,
+                    message: err.message,
+                }
+            });
         }
-        if (result.changes === 0) {
-            return res.status(404).json({ message: 'Book not found' });
+
+        if (changes === 0) {
+            return res.status(404).json({
+                meta: {
+                    timestamp: new Date().toISOString(),
+                    status: "error"
+                },
+                error: {
+                    code: "BOOK_NOT_FOUND",
+                    message: "The specified book could not be found. Please check the provided ID."
+                }
+            }
+            );
         }
-        res.json({ message: 'Book updated successfully' });
+        // // Key to exclude
+        // const keyToExclude = "changes";
+
+        // // Create a new object excluding the specified key
+        // const { [keyToExclude]: _, ...filteredResult} = result
+
+        res.json({
+            meta: {
+                timestamp: new Date().toISOString(),
+                status: "success"
+            },
+            data: result
+        });
     });
 };
 
@@ -62,11 +162,40 @@ exports.delete = (req, res) => {
     const { id } = req.params;
     BookModel.delete(id, (err, result) => {
         if (err) {
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json(
+                {
+                    meta: {
+                        timestamp: new Date().toISOString(),
+                        status: "error"
+                    },
+                    error: {
+                        code: err.code,
+                        message: err.message,
+                    }
+                }
+            );
         }
         if (result.changes === 0) {
-            return res.status(404).json({ message: 'Book not found' });
+            return res.status(404).json({
+                meta: {
+                    timestamp: new Date().toISOString(),
+                    status: "error"
+                },
+                error: {
+                    code: "BOOK_NOT_FOUND",
+                    message: "The specified book could not be found. Please check the provided ID."
+                }
+            });
         }
-        res.json({ message: 'Book deleted successfully' });
+        res.json({
+            meta: {
+                timestamp: new Date().toISOString(),
+                status: "success"
+            },
+            data: {
+                message: "Book deleted successfully",
+                deletedBookId: id // the ID of the deleted book for reference
+            }
+        });
     });
 };

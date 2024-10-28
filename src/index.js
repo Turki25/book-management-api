@@ -1,17 +1,19 @@
-require('dotenv').config();
 const express = require('express');
-const bookRoutes = require('./routes/bookRoutes');
+const router = require('./routes/bookRoutes');
+const { requestLogger, logRequestsAndResponses } = require('./middleware/loggingMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
+app.use(requestLogger); // Log requests to file
+app.use(logRequestsAndResponses); // Log both requests and responses
 
 // Routes
-app.use('/api', bookRoutes);
+app.use('/api', router);
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
