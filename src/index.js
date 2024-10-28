@@ -3,7 +3,7 @@ const router = require('./routes/bookRoutes');
 const { requestLogger, logRequestsAndResponses } = require('./middleware/loggingMiddleware');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3002;
 
 // Middleware
 app.use(express.json());

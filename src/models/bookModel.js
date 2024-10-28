@@ -43,9 +43,9 @@ const Book = {
     const updates = [];
     const params = [];
 
-    // Construct the update statement based on the provided fields
+    // Construct the update statement based on the provided fields, BCZ I don't know in advance what the updated fields will be 
     for (const [key, value] of Object.entries(bookData)) {
-      if (value !== undefined) { // Check for undefined to include the field
+      if (value !== undefined) { // Check for not undefined to include the field
         updates.push(`${key} = ?`);
         params.push(value);
       }

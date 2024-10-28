@@ -141,12 +141,7 @@ exports.update = (req, res) => {
             }
             );
         }
-        // // Key to exclude
-        // const keyToExclude = "changes";
-
-        // // Create a new object excluding the specified key
-        // const { [keyToExclude]: _, ...filteredResult} = result
-
+        
         res.json({
             meta: {
                 timestamp: new Date().toISOString(),
